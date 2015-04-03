@@ -1,6 +1,7 @@
 #+TITLE: Jason Samsa's Emacs Configuration
 #+OPTIONS: toc:4 h:4
 #+STARTUP: content
+
 * Basic Configuration
 ** ~/.emacs.d/init.el
 
@@ -135,22 +136,40 @@ From http://www.wisdomandwonder.com/wordpress/wp-content/uploads/2014/03/C3F.htm
   (set-register ?e '(file . "~/.emacs.d/jsamsa.org"))
   (set-register ?j '(file . "~/org/journal.org"))
   (set-register ?c '(file . "~/org/content-platform.org"))
+  (set-register ?d '(file . "~/org/development.org"))
 #+END_SRC
 
 ** Key Bindings
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x C-m") 'helm-M-x)
 #+END_SRC
+** Narrowing
+Enable narrowing without warning
+#+BEGIN_SRC emacs-lisp
+(put 'narrow-to-region 'disabled nil)
+#+END_SRC
 * Org mode
+
 My org files are in ~/org
 #+BEGIN_SRC emacs-lisp
 (setq org-directory "~/org")
 #+END_SRC
 
+Would like to use babel for capturing and executing useful commands.
+
+#+BEGIN_SRC emacs-lisp
+
+(require 'ob-sh)
+(require 'ob-dot)
+#+END_SRC
+
 Syntax highlighting for code blocks
+
 #+BEGIN_SRC emacs-lisp
 (setq org-src-fontify-natively t)
 #+END_SRC
+
+
 ** Editing source code
 #+BEGIN_SRC emacs-lisp
 (setq org-src-window-setup 'current-window)
@@ -160,6 +179,7 @@ Syntax highlighting for code blocks
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c a" 'org-agenda)
 #+END_SRC
+
 ** GNUPlot
 #+BEGIN_SRC emacs-lisp
   (use-package gnuplot
@@ -169,7 +189,33 @@ Syntax highlighting for code blocks
 
 #+END_SRC
 * Programming
-** Lisp
+** Work around clock table indent bug/feature
+
+This really didn't do what I want, but I may want to build on it if
+this doesn't resolve in versions after 8.2.10
+
+#+BEGIN_SRC emacs-lisp
+  ;; (defun my-org-clocktable-indent-string (level)
+  ;;   (if (= level 1)
+  ;;       ""
+  ;;     (let ((str "^"))
+  ;;       (while (> level 2)
+  ;;         (setq level (1- level)
+  ;;               str (concat str "--")))
+  ;;       (concat str "-> "))))
+
+  ;; (advice-add 'org-clocktable-indent-string :override #'my-org-clocktable-indent-string)
+#+END_SRC
+
+** Speed Commands
+#+BEGIN_SRC emacs-lisp
+
+(setq org-use-speed-commands t)
+
+#+END_SRC
+* Programming
+** Lisp Mode Hook
+I want to use these modes for any lisp dialect
 #+BEGIN_SRC emacs-lisp
   (defun my-lisp-mode-hook()
     (paredit-mode)
@@ -177,39 +223,49 @@ Syntax highlighting for code blocks
     (rainbow-delimiters-mode)
     (show-paren-mode))
 #+END_SRC
+
+** Emacs Lisp
+#+BEGIN_SRC emacs-lisp
+(add-hook 'emacs-lisp-mode-hook 'my-lisp-mode-hook)
+
+#+END_SRC
+
 ** Clojure
 #+BEGIN_SRC emacs-lisp
-  (use-package cider 
-    :ensure t
-    :config (setq cider-lein-command "~/bin/lein")
-    :init
-    (add-hook 'cider-mode-hook #'eldoc-mode)
-    (setq nrepl-log-messages t)
-    )
 
-  ; using 4clojure for study group
-  (use-package 4clojure :ensure t)
+    (use-package cider 
+      :ensure t
+      :config (setq cider-lein-command "~/bin/lein")
+      :init
+      (add-hook 'cider-mode-hook #'eldoc-mode)
+      (add-hook 'clojure-mode-hook 'my-lisp-mode-hook)
+      (setq nrepl-log-messages t))
+
+
+
+    ; using 4clojure for study group
+    (use-package 4clojure :ensure t)
 
 #+END_SRC
 ** Haskell
 #+BEGIN_SRC emacs-lisp
-    (use-package haskell-mode
-      :ensure t
-      :config
-      (add-hook 'haskell-mode-hook 'haskell-indent-mode)
-      (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
-      (setq haskell-process-suggest-remove-import-lines t
-            haskell-process-auto-import-loaded-modules t
-            haskell-process-log t)
-      (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-or-reload)
-      (define-key haskell-mode-map (kbd "C-`") 'haskell-interactive-bring)
-      (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
-      (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
-      (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
-      (define-key haskell-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
-      (define-key haskell-mode-map (kbd "C-c c") 'haskell-process-cabal)
-      (define-key haskell-mode-map (kbd "SPC") 'haskell-mode-contextual-space)
-      )
+  (use-package haskell-mode
+    :ensure t
+    :config
+    (add-hook 'haskell-mode-hook 'haskell-indent-mode)
+    (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+    (setq haskell-process-suggest-remove-import-lines t
+          haskell-process-auto-import-loaded-modules t
+          haskell-process-log t)
+    (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-or-reload)
+    (define-key haskell-mode-map (kbd "C-`") 'haskell-interactive-bring)
+    (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
+    (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
+    (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+    (define-key haskell-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+    (define-key haskell-mode-map (kbd "C-c c") 'haskell-process-cabal)
+    (define-key haskell-mode-map (kbd "SPC") 'haskell-mode-contextual-space)
+    )
 #+END_SRC
 ** Javascript
 ** Python
