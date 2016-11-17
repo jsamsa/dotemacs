@@ -3,11 +3,35 @@
 #+STARTUP: content
 
 * Basic Configuration
+** Backups and Autosaves
+#+BEGIN_SRC emacs-lisp
 
+  ;; store all backup and autosave files in the tmp dir
+  ;; (setq backup-directory-alist
+  ;;       `((".*" . ,temporary-file-directory)))
+  ;; (setq auto-save-file-name-transforms
+  ;;       `((".*" . ,temporary-file-directory)))
+
+  ;; autosave the undo-tree history
+  ;; (setq undo-tree-history-directory-alist
+  ;;       `((".*" . ,temporary-file-directory)))
+  ;; (setq undo-tree-auto-save-history t)
+#+END_SRC
+** Newline at end of file
+#+BEGIN_SRC emacs-lisp
+
+  (setq require-final-newline t)
+
+#+END_SRC
+** revert buffers automatically when underlying files are changed externally
+#+BEGIN_SRC emacs-lisp
+(global-auto-revert-mode t)
+#+END_SRC
 ** Projectile
 Globally enable Projectile
 #+BEGIN_SRC emacs-lisp
 (projectile-mode)
+(setq projectile-switch-project-action 'helm-projectile)
 #+END_SRC
 ** Indenting stuff						   :disabled:
 #+BEGIN_SRC emacs-lisp
@@ -15,6 +39,7 @@ Globally enable Projectile
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle n
   (setq js-indent-level 2)
+  (setq js-indent-level 4)
   (setq c-basic-offset 4)
 #+END_SRC
 ** ~/.emacs.d/init.el
@@ -74,6 +99,12 @@ Make command key meta and option key super
 (set-face-attribute 'default nil :height 160)
 
 #+END_SRC
+** Bells
+#+BEGIN_SRC emacs-lisp
+  ;; quiet, please! No dinging!
+  (setq visible-bell nil)
+  (setq ring-bell-function 'ignore)
+#+END_SRC
 ** Helm
 #+BEGIN_SRC emacs-lisp
   (use-package helm
@@ -111,6 +142,10 @@ Make command key meta and option key super
 (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 
+** Show Column Numbers
+#+BEGIN_SRC emacs-lisp
+  (column-number-mode)
+#+END_SRC
 ** Backups
 #+BEGIN_SRC emacs-lisp
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
@@ -127,6 +162,10 @@ Shhhh....
 (setq inhibit-startup-message t)
 #+END_SRC
 
+** Frame Size
+#+BEGIN_SRC emacs-lisp
+   (when window-system (set-frame-size (selected-frame) 120 40))
+#+END_SRC
 ** Encoding
 From http://www.wisdomandwonder.com/wordpress/wp-content/uploads/2014/03/C3F.html
 #+BEGIN_SRC emacs-lisp
@@ -159,9 +198,7 @@ From http://www.wisdomandwonder.com/wordpress/wp-content/uploads/2014/03/C3F.htm
 ** Registers
 #+BEGIN_SRC emacs-lisp
   (set-register ?e '(file . "~/.emacs.d/jsamsa.org"))
-  (set-register ?j '(file . "~/org/journal.org"))
-  (set-register ?c '(file . "~/org/content-platform.org"))
-  (set-register ?d '(file . "~/org/development.org"))
+  (set-register ?t '(file . "~/org/todo.org"))
 #+END_SRC
 
 ** Key Bindings
@@ -173,6 +210,16 @@ Enable narrowing without warning
 #+BEGIN_SRC emacs-lisp
 (put 'narrow-to-region 'disabled nil)
 #+END_SRC
+** Speedbar 
+
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "C-c s") 'speedbar)
+  (add-hook 'speedbar-after-create-hook
+            (lambda ()
+              (speedbar-toggle-show-all-files)))
+
+#+END_SRC
+
 * Org mode
 
 My org files are in ~/org
@@ -198,32 +245,52 @@ Default TODO workflow
 #+BEGIN_SRC emacs-lisp
 
 (setq org-todo-keywords
-      '((sequence "TODO" "BLOCKED" "|" "DONE" "DELEGATED" "CANCELED")))
+      '((sequence "TODO(t/!)" "BLOCKED(b/@)" "|" "DONE" "DELEGATED(@)" "CANCELED(@)")))
 
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-
-(setq org-agenda-custom-commands
-      '(("c" . "My Custom Agendas")
-        ("cu" "Unscheduled TODO"
-         ((todo ""
-                ((org-agenda-overriding-header "\nUnscheduled TODO")
-                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled)))))
-         nil
-         nil)))
-
+  ;; See C-h v org-agenda-custom-commands-local-options 
+  (setq org-agenda-custom-commands
+        '(("u" "Unscheduled"
+           ((todo "" ((org-agenda-overriding-header "Unscheduled")
+                      (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))))
+            (todo "" ((org-agenda-overriding-header "Scheduled")
+                      (org-agenda-skip-function '(org-agenda-skip-entry-if 'notscheduled))))))
+          ))
 #+END_SRC
 ** Editing source code
 #+BEGIN_SRC emacs-lisp
 (setq org-src-window-setup 'current-window)
 #+END_SRC
-
+** Babel
+#+BEGIN_SRC emacs-lisp
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (sh . t)
+     (http . t)))
+#+END_SRC
 ** Key Bindings
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-c a" 'org-agenda)
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cc" 'org-capture)
+(global-set-key "\C-cb" 'org-iswitchb)
+
 #+END_SRC
 
+** Capture templates
+
+#+BEGIN_SRC emacs-lisp
+
+  (setq org-capture-templates
+        '(("t" "Todo" entry (file "~/org/todo.org")
+           "* TODO %?\n  %i\n  %a")
+          ("m" "Meeting" entry (file+headline "~/org/todo.org" "Meetings")
+           "** %?\n    %^T\n")))
+
+#+END_SRC
 ** GNUPlot
 #+BEGIN_SRC emacs-lisp
   (use-package gnuplot
@@ -290,6 +357,10 @@ I want to use these modes for any lisp dialect
     (use-package 4clojure :ensure t)
 
 #+END_SRC
+** Groovy
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'auto-mode-alist '("\\.groovy\'" . groovy-mode))
+#+END_SRC
 ** Haskell
 #+BEGIN_SRC emacs-lisp
   (use-package haskell-mode
@@ -315,6 +386,7 @@ I want to use these modes for any lisp dialect
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.js$" . js3-mode))
   (add-hook 'js3-mode-hook (lambda () (tern-mode t)))
+  (setq js-indent-level 4)
 #+END_SRC
 
 ** Python
@@ -326,4 +398,19 @@ I want to use these modes for any lisp dialect
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c g s") 'magit-status)
+#+END_SRC
+** Web Mode
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'auto-mode-alist '("\\.html\\'" . web-mode))
+
+  (defun my-web-mode-hook ()
+    (setq web-mode-markup-indent-offset 2))
+
+  (add-hook 'web-mode-hook 'my-web-mode-hook)
+#+END_SRC
+* Databases
+** HSQL
+#+BEGIN_SRC emacs-lisp
+  (use-package hsql
+    :load-path "~/site-lisp/hsql.el/")
 #+END_SRC
