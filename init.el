@@ -11,6 +11,7 @@
 (require 'use-package)
 
 (use-package org)
+  
 
 (org-babel-load-file "~/.emacs.d/jsamsa.org")
 
@@ -22,7 +23,7 @@
  '(org-agenda-files (quote ("~/org/todo.org")))
  '(package-selected-packages
    (quote
-    (web-mode csharp-mode ob-http lorem-ipsum groovy-mode magit dockerfile-mode helm-org-rifle helm-package helm-orgcard helm-projectile ag nodejs-repl tern tern-auto-complete tern-context-coloring js3-mode dracula-theme exec-path-from-shell less-css-mode typescript-mode grunt company projectile gradle-mode markdown-mode markdown-mode+ rainbow-identifiers rainbow-delimiters paredit haskell-mode 4clojure cider gnuplot smart-mode-line use-package))))
+    (helm-gtags yaml-mode flycheck js2-mode company-tern graphviz-dot-mode org web-mode csharp-mode ob-http lorem-ipsum groovy-mode magit dockerfile-mode helm-org-rifle helm-package helm-orgcard helm-projectile ag nodejs-repl tern tern-auto-complete tern-context-coloring js3-mode dracula-theme exec-path-from-shell less-css-mode typescript-mode grunt company projectile gradle-mode markdown-mode markdown-mode+ rainbow-identifiers rainbow-delimiters paredit haskell-mode 4clojure cider gnuplot smart-mode-line use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

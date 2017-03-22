@@ -31,11 +31,14 @@
 Globally enable Projectile
 #+BEGIN_SRC emacs-lisp
 (projectile-mode)
-(setq projectile-switch-project-action 'helm-projectile)
+;;(setq projectile-switch-project-action 'helm-projectile)
+(setq projectile-switch-project-action 'magit-status)
+
 #+END_SRC
 ** Indenting stuff						   :disabled:
 #+BEGIN_SRC emacs-lisp
 (setq indent-tabs-mode nil)
+(setq-default indent-tabs-mode nil)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle n
   (setq js-indent-level 2)
@@ -89,8 +92,9 @@ Make command key meta and option key super
 #+BEGIN_SRC emacs-lisp
   (use-package exec-path-from-shell
     :init (progn
-            (exec-path-from-shell-initialize))
-    )
+            (exec-path-from-shell-initialize)
+            (exec-path-from-shell-copy-env "SSH_AGENT_PID")
+            (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")))
       
 #+END_SRC
 
@@ -269,7 +273,9 @@ Default TODO workflow
    'org-babel-load-languages
    '((emacs-lisp . t)
      (sh . t)
-     (http . t)))
+     (http . t)
+     (java . t)
+     (dot . t)))
 #+END_SRC
 ** Key Bindings
 #+BEGIN_SRC emacs-lisp
@@ -285,10 +291,12 @@ Default TODO workflow
 #+BEGIN_SRC emacs-lisp
 
   (setq org-capture-templates
-        '(("t" "Todo" entry (file "~/org/todo.org")
+	'(("t" "Todo" entry (file "~/org/todo.org")
            "* TODO %?\n  %i\n  %a")
           ("m" "Meeting" entry (file+headline "~/org/todo.org" "Meetings")
-           "** %?\n    %^T\n")))
+           "** %?\n    %^T\n")
+	  ("i" "Interview Candidate" plain (file+headline "~/org/interview.org" "PVL 88936")
+	   (file "~/org/pvl-88936.org"))))
 
 #+END_SRC
 ** GNUPlot
@@ -297,6 +305,13 @@ Default TODO workflow
     :ensure t
     :config
     (setq gnuplot-program "/usr/local/bin/gnuplot"))
+
+#+END_SRC
+** Contrib
+#+BEGIN_SRC emacs-lisp
+
+    (use-package ox-confluence
+      :load-path "~/site-lisp/org-mode/contrib/lisp/")
 
 #+END_SRC
 * Programming
@@ -337,24 +352,23 @@ I want to use these modes for any lisp dialect
 ** Emacs Lisp
 #+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-lisp-mode-hook 'my-lisp-mode-hook)
-
 #+END_SRC
 
 ** Clojure
 #+BEGIN_SRC emacs-lisp
 
-    (use-package cider 
-      :ensure t
-      :config (setq cider-lein-command "~/bin/lein")
-      :init
-      (add-hook 'cider-mode-hook #'eldoc-mode)
-      (add-hook 'clojure-mode-hook 'my-lisp-mode-hook)
-      (setq nrepl-log-messages t))
+  (use-package cider 
+    :ensure t
+    ;; :config (setq cider-lein-command "~/bin/lein")
+    :init
+    (add-hook 'cider-mode-hook #'eldoc-mode)
+    (add-hook 'clojure-mode-hook 'my-lisp-mode-hook)
+    (setq nrepl-log-messages t))
 
 
 
-    ; using 4clojure for study group
-    (use-package 4clojure :ensure t)
+  ; using 4clojure for study group
+  (use-package 4clojure :ensure t)
 
 #+END_SRC
 ** Groovy
@@ -384,11 +398,47 @@ I want to use these modes for any lisp dialect
 ** Javascript
 
 #+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("\\.js$" . js3-mode))
-  (add-hook 'js3-mode-hook (lambda () (tern-mode t)))
-  (setq js-indent-level 4)
+    ;; (add-to-list 'auto-mode-alist '("\\.js$" . js3-mode))
+    ;; (add-hook 'js3-mode-hook (lambda () (tern-mode t)))
+    ;; (setq js-indent-level 4)
+
+    ;; (use-package js2-mode :ensure t :defer t
+    ;;   :mode (("\\.js\\'" . js2-mode)
+    ;;          ("\\.json\\'" . javascript-mode))
+    ;;   :commands js2-mode
+    ;;   :init (progn
+    ;;           (setq-default js2-basic-offset 4
+    ;;                         js2-indent-switch-body t
+    ;;                         js2-auto-indent-p t
+    ;;                         js2-global-externs '("angular")
+    ;;                         js2-indent-on-enter-key t
+    ;;                         flycheck-disabled-checkers '(javascript-jshint)
+    ;;                         flycheck-checker '(javascript-eslint)
+    ;;                         flycheck-eslintrc "~/.eslintrc"))
+    ;;   (add-to-list 'interpreter-mode-alist (cons "node" 'js2-mode))
+    ;;   (add-to-list 'js2-mode-hook 'flycheck-mode))
+
+  ;; (setq-default flycheck-disabled-checkers '(javascript-jshint)
+  ;;               flycheck-checker 'javascript-eslint
+  ;;               flycheck-eslintrc "~/dev/star-app/src/main/webap/.eslintrc.yml")
 #+END_SRC
 
+** Flycheck
+#+BEGIN_SRC emacs-lisp
+
+  (defun my/use-eslint-from-node-modules ()
+    (let* ((root (locate-dominating-file
+                 (or (buffer-file-name) default-directory)
+                 "node_modules"))
+          (eslint (and root
+                       (expand-file-name "node_modules/.bin/eslint"
+                                         root))))
+      (when (and eslint (file-executable-p eslint))
+        (setq-local flycheck-javascript-eslint-executable eslint))))
+
+  (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+  (add-hook 'after-init-hook #'global-flycheck-mode)
+#+END_SRC
 ** Python
 ** Elisp
 #+BEGIN_SRC emacs-lisp
